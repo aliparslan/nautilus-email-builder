@@ -1,19 +1,28 @@
 "use client";
 
 import { createUsePuck } from "@puckeditor/core";
-import { PanelLeft, PanelRight, Redo2, Send, Undo2 } from "lucide-react";
+import {
+  CalendarClock,
+  PanelLeft,
+  PanelRight,
+  Redo2,
+  Send,
+  Undo2,
+} from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import type { EmailConfig, EmailData } from "@/email/config";
+import { api } from "@/lib/client-api";
 import { cn } from "@/lib/cn";
 import { formatRelative } from "@/lib/format";
 import { Button } from "../ui/Button";
 import { IconButton } from "../ui/IconButton";
 import { ReviewSendDialog } from "./ReviewSendDialog";
+import { ScheduledDialog } from "./ScheduledDialog";
 
 const usePuck = createUsePuck<EmailConfig>();
 
-type DialogId = "review" | null;
+type DialogId = "review" | "scheduled" | null;
 
 type Props = {
   savedAt: string | null;
@@ -28,6 +37,7 @@ export function EditorHeader({ savedAt }: Props) {
   const history = usePuck((s) => s.history);
 
   const [dialog, setDialog] = useState<DialogId>(null);
+  const [scheduledCount, setScheduledCount] = useState<number | null>(null);
 
   const subject =
     typeof data.root.props?.subject === "string" ? data.root.props.subject : "";
@@ -43,6 +53,22 @@ export function EditorHeader({ savedAt }: Props) {
       }),
     [dispatch],
   );
+
+  // Quiet badge count; failures (Temporal offline) simply hide the badge.
+  useEffect(() => {
+    const refresh = () =>
+      api
+        .listScheduled()
+        .then(({ items }) =>
+          setScheduledCount(
+            items.filter((i) => i.status === "scheduled").length,
+          ),
+        )
+        .catch(() => setScheduledCount(null));
+    void refresh();
+    const id = setInterval(refresh, 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const close = useCallback(() => setDialog(null), []);
 
@@ -124,6 +150,23 @@ export function EditorHeader({ savedAt }: Props) {
           </IconButton>
         </div>
 
+        <div className="mx-1 h-6 w-px bg-divide dark:bg-neutral-800" />
+
+        <div className="flex items-center gap-0.5">
+          <IconButton
+            label="Scheduled emails (⇧⌘S)"
+            onClick={() => setDialog("scheduled")}
+            className="relative"
+          >
+            <CalendarClock className="size-4" />
+            {scheduledCount ? (
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 font-mono text-[10px] font-semibold text-white">
+                {scheduledCount}
+              </span>
+            ) : null}
+          </IconButton>
+        </div>
+
         <Button
           variant="primary"
           onClick={() => setDialog("review")}
@@ -142,7 +185,12 @@ export function EditorHeader({ savedAt }: Props) {
         data={data}
         subject={subject}
         onSubjectChange={setSubject}
-        onScheduled={close}
+        onScheduled={() => setDialog("scheduled")}
+      />
+      <ScheduledDialog
+        open={dialog === "scheduled"}
+        onClose={close}
+        onCountChange={setScheduledCount}
       />
     </>
   );

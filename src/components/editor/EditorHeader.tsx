@@ -1,8 +1,9 @@
 "use client";
 
-import { createUsePuck } from "@puckeditor/core";
+import { createUsePuck, type Data } from "@puckeditor/core";
 import {
   CalendarClock,
+  LayoutTemplate,
   PanelLeft,
   PanelRight,
   Redo2,
@@ -11,7 +12,9 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import type { EmailConfig, EmailData } from "@/email/config";
+import type { EmailTemplate } from "@/email/templates";
 import { api } from "@/lib/client-api";
 import { cn } from "@/lib/cn";
 import { formatRelative } from "@/lib/format";
@@ -19,10 +22,11 @@ import { Button } from "../ui/Button";
 import { IconButton } from "../ui/IconButton";
 import { ReviewSendDialog } from "./ReviewSendDialog";
 import { ScheduledDialog } from "./ScheduledDialog";
+import { TemplatesDialog } from "./TemplatesDialog";
 
 const usePuck = createUsePuck<EmailConfig>();
 
-type DialogId = "review" | "scheduled" | null;
+type DialogId = "review" | "templates" | "scheduled" | null;
 
 type Props = {
   savedAt: string | null;
@@ -51,6 +55,19 @@ export function EditorHeader({ savedAt }: Props) {
           root: { ...prev.root, props: { ...prev.root.props, subject } },
         }),
       }),
+    [dispatch],
+  );
+
+  const applyTemplate = useCallback(
+    (template: EmailTemplate) => {
+      // Puck's setData action is typed against the default (untyped) Data shape.
+      dispatch({ type: "setData", data: template.data as Data });
+      dispatch({ type: "setUi", ui: { itemSelector: null } });
+      setDialog(null);
+      toast.success(`Loaded “${template.name}” template`, {
+        description: "Undo with ⌘Z if that wasn't what you wanted.",
+      });
+    },
     [dispatch],
   );
 
@@ -154,6 +171,12 @@ export function EditorHeader({ savedAt }: Props) {
 
         <div className="flex items-center gap-0.5">
           <IconButton
+            label="Templates (⇧⌘T)"
+            onClick={() => setDialog("templates")}
+          >
+            <LayoutTemplate className="size-4" />
+          </IconButton>
+          <IconButton
             label="Scheduled emails (⇧⌘S)"
             onClick={() => setDialog("scheduled")}
             className="relative"
@@ -186,6 +209,11 @@ export function EditorHeader({ savedAt }: Props) {
         subject={subject}
         onSubjectChange={setSubject}
         onScheduled={() => setDialog("scheduled")}
+      />
+      <TemplatesDialog
+        open={dialog === "templates"}
+        onClose={close}
+        onSelect={applyTemplate}
       />
       <ScheduledDialog
         open={dialog === "scheduled"}

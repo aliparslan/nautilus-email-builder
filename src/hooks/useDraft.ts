@@ -1,0 +1,65 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { EmailData } from "@/email/config";
+
+const KEY = "nautilus-email:draft:v1";
+const DEBOUNCE_MS = 400;
+
+type Draft = { data: EmailData; savedAt: string };
+
+export function loadDraft(): Draft | null {
+  try {
+    const raw = localStorage.getItem(KEY);
+    return raw ? (JSON.parse(raw) as Draft) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearDraft() {
+  localStorage.removeItem(KEY);
+}
+
+/** Debounced localStorage autosave. `save` queues; `flush` writes immediately (⌘S). */
+export function useDraftAutosave() {
+  const [savedAt, setSavedAt] = useState<string | null>(
+    () => loadDraft()?.savedAt ?? null,
+  );
+  const pending = useRef<EmailData | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const write = useCallback((data: EmailData) => {
+    const draft: Draft = { data, savedAt: new Date().toISOString() };
+    try {
+      localStorage.setItem(KEY, JSON.stringify(draft));
+      setSavedAt(draft.savedAt);
+    } catch {
+      // Quota exceeded (very large inline images). Editing continues; the draft just isn't persisted.
+    }
+  }, []);
+
+  const flush = useCallback(() => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+    if (pending.current) {
+      write(pending.current);
+      pending.current = null;
+      return true;
+    }
+    return false;
+  }, [write]);
+
+  const save = useCallback(
+    (data: EmailData) => {
+      pending.current = data;
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(flush, DEBOUNCE_MS);
+    },
+    [flush],
+  );
+
+  useEffect(() => () => void flush(), [flush]);
+
+  return { save, flush, savedAt };
+}

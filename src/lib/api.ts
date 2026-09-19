@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { ZodType } from "zod";
+import { SchedulerUnavailableError } from "@/lib/scheduler";
 
 export type ApiError = { error: string; code?: string; issues?: string[] };
 
@@ -33,4 +34,11 @@ export async function parseBody<T>(
     };
   }
   return { ok: true, value: result.data };
+}
+
+export function schedulerError(e: unknown) {
+  if (e instanceof SchedulerUnavailableError)
+    return apiError(e.message, 503, { code: "scheduler_unavailable" });
+  console.error("scheduler error", e);
+  return apiError("Something went wrong with scheduling", 500);
 }

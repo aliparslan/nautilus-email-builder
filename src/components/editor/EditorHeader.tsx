@@ -3,30 +3,36 @@
 import { createUsePuck, type Data } from "@puckeditor/core";
 import {
   CalendarClock,
+  Keyboard,
   LayoutTemplate,
+  Moon,
   PanelLeft,
   PanelRight,
   Redo2,
   Send,
+  Sun,
   Undo2,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { EmailConfig, EmailData } from "@/email/config";
 import type { EmailTemplate } from "@/email/templates";
 import { api } from "@/lib/client-api";
 import { cn } from "@/lib/cn";
 import { formatRelative } from "@/lib/format";
+import { useTheme } from "../theme/useTheme";
 import { Button } from "../ui/Button";
 import { IconButton } from "../ui/IconButton";
 import { ReviewSendDialog } from "./ReviewSendDialog";
 import { ScheduledDialog } from "./ScheduledDialog";
+import { useShortcuts } from "./shortcuts";
+import { ShortcutsDialog } from "./ShortcutsDialog";
 import { TemplatesDialog } from "./TemplatesDialog";
 
 const usePuck = createUsePuck<EmailConfig>();
 
-type DialogId = "review" | "templates" | "scheduled" | null;
+type DialogId = "review" | "templates" | "scheduled" | "shortcuts" | null;
 
 type Props = {
   savedAt: string | null;
@@ -34,11 +40,12 @@ type Props = {
 };
 
 /** Replaces Puck's header: subject line, history, and every app-level action live here. */
-export function EditorHeader({ savedAt }: Props) {
+export function EditorHeader({ savedAt, onSaveNow }: Props) {
   const data = usePuck((s) => s.appState.data as EmailData);
   const ui = usePuck((s) => s.appState.ui);
   const dispatch = usePuck((s) => s.dispatch);
   const history = usePuck((s) => s.history);
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const [dialog, setDialog] = useState<DialogId>(null);
   const [scheduledCount, setScheduledCount] = useState<number | null>(null);
@@ -58,6 +65,21 @@ export function EditorHeader({ savedAt }: Props) {
     [dispatch],
   );
 
+  const toggleViewport = useCallback(() => {
+    dispatch({
+      type: "setUi",
+      ui: (prev) => {
+        const isMobile = prev.viewports.current.width === 375;
+        return {
+          viewports: {
+            ...prev.viewports,
+            current: { width: isMobile ? 720 : 375, height: "auto" },
+          },
+        };
+      },
+    });
+  }, [dispatch]);
+
   const applyTemplate = useCallback(
     (template: EmailTemplate) => {
       // Puck's setData action is typed against the default (untyped) Data shape.
@@ -69,6 +91,39 @@ export function EditorHeader({ savedAt }: Props) {
       });
     },
     [dispatch],
+  );
+
+  const saveNow = useCallback(() => {
+    toast.success(onSaveNow() ? "Draft saved" : "Already saved", {
+      duration: 1500,
+    });
+  }, [onSaveNow]);
+
+  useShortcuts(
+    useMemo(
+      () => ({
+        review: () => setDialog("review"),
+        templates: () => setDialog("templates"),
+        scheduled: () => setDialog("scheduled"),
+        shortcuts: () =>
+          setDialog((d) => (d === "shortcuts" ? null : "shortcuts")),
+        save: saveNow,
+        toggleViewport,
+        toggleTheme,
+        toggleLeftSidebar: () =>
+          dispatch({
+            type: "setUi",
+            ui: (p) => ({ leftSideBarVisible: !p.leftSideBarVisible }),
+          }),
+        toggleRightSidebar: () =>
+          dispatch({
+            type: "setUi",
+            ui: (p) => ({ rightSideBarVisible: !p.rightSideBarVisible }),
+          }),
+      }),
+      [saveNow, toggleViewport, toggleTheme, dispatch],
+    ),
+    dialog === null || dialog === "shortcuts",
   );
 
   // Quiet badge count; failures (Temporal offline) simply hide the badge.
@@ -188,6 +243,27 @@ export function EditorHeader({ savedAt }: Props) {
               </span>
             ) : null}
           </IconButton>
+          <IconButton
+            label="Keyboard shortcuts (?)"
+            onClick={() => setDialog("shortcuts")}
+          >
+            <Keyboard className="size-4" />
+          </IconButton>
+          <IconButton
+            label={
+              theme === "dark"
+                ? "Switch to light mode (⇧⌘L)"
+                : "Switch to dark mode (⇧⌘L)"
+            }
+            onClick={toggleTheme}
+            className="group"
+          >
+            {theme === "dark" ? (
+              <Sun className="size-4 transition-transform group-hover:rotate-45 motion-reduce:transform-none" />
+            ) : (
+              <Moon className="size-4 transition-transform group-hover:-rotate-12 motion-reduce:transform-none" />
+            )}
+          </IconButton>
         </div>
 
         <Button
@@ -220,6 +296,7 @@ export function EditorHeader({ savedAt }: Props) {
         onClose={close}
         onCountChange={setScheduledCount}
       />
+      <ShortcutsDialog open={dialog === "shortcuts"} onClose={close} />
     </>
   );
 }

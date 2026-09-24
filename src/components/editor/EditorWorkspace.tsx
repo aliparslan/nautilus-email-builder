@@ -5,17 +5,12 @@ import {
   Check,
   ChevronDown,
   CircleHelp,
-  Image as ImageIcon,
-  Layers,
-  LayoutTemplate,
-  LibraryBig,
   Mail,
   Monitor,
   Moon,
   PanelRightClose,
   Send,
   SquarePen,
-  SquarePlus,
   Sun,
   Users,
   X,
@@ -57,6 +52,7 @@ import { useShortcuts } from "./shortcuts";
 import { TemplatesPanel } from "./TemplatesPanel";
 import { PatternsPanel } from "./PatternsPanel";
 import { LayersPanel } from "./LayersPanel";
+import { RAIL_TOP } from "./editor-navigation";
 import { observePreviewFrame } from "./preview-frame";
 import { WalkthroughDialog } from "./WalkthroughDialog";
 import { Button } from "../ui/Button";
@@ -72,14 +68,6 @@ export type DroppedItem =
   | { id: string; kind: "asset"; asset: ImageAsset }
   | { id: string; kind: "pattern"; pattern: SavedPattern };
 const WALKTHROUGH_KEY = "nautilus-email:walkthrough:v1";
-
-const RAIL_TOP = [
-  { id: "layers", label: "Layers", Icon: Layers },
-  { id: "assets", label: "Assets", Icon: ImageIcon },
-  { id: "blocks", label: "Blocks", Icon: SquarePlus },
-  { id: "patterns", label: "Patterns", Icon: LibraryBig },
-  { id: "templates", label: "Templates", Icon: LayoutTemplate },
-] as const;
 
 const LAYER_APPEARANCE: Record<string, { color: string; icon: string }> = {
   Section: { color: "#007da9", icon: "panels-top-left" },

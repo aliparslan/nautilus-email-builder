@@ -1,31 +1,26 @@
 "use client";
 
-import {
-  Blocks,
-  ListTree,
-  PanelRight,
-  Send,
-  Sparkles,
-} from "lucide-react";
+import { PanelRightOpen, Send } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../ui/Button";
 import { Dialog, DialogBody, DialogFooter } from "../ui/Dialog";
+import { PANEL_ICONS } from "./editor-navigation";
 
 const STEPS = [
   {
     title: "Build from the left",
     body: "Add blocks, reuse Mister assets and patterns, or start from a template.",
-    Icon: Blocks,
+    Icon: PANEL_ICONS.blocks,
   },
   {
     title: "Arrange in Layers",
     body: "Select, reorder, and nest email content from the Layers panel.",
-    Icon: ListTree,
+    Icon: PANEL_ICONS.layers,
   },
   {
     title: "Edit in Properties",
     body: "Select a block to change its content and style. Click the canvas to edit rich text.",
-    Icon: PanelRight,
+    Icon: PanelRightOpen,
   },
   {
     title: "Review and send",
@@ -58,7 +53,7 @@ export function WalkthroughDialog({
       <DialogBody className="px-6 pb-2">
         <div className="overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_20%_0%,rgba(5,178,223,.20),transparent_45%),linear-gradient(145deg,#f4fbfd,#e8f3f7)] p-6 dark:bg-[radial-gradient(circle_at_20%_0%,rgba(5,178,223,.25),transparent_45%),linear-gradient(145deg,#101d24,#071117)]">
           <div className="flex size-12 items-center justify-center rounded-xl bg-white text-brand shadow-card dark:bg-neutral-900">
-            <current.Icon className="size-6" strokeWidth={1.8} />
+            <current.Icon className="size-6" strokeWidth={1.9} />
           </div>
           <p className="mt-8 font-heading text-xl tracking-[0.015em] text-navy dark:text-white">
             {current.title}
@@ -91,7 +86,7 @@ export function WalkthroughDialog({
         )}
         <Button
           variant="primary"
-          icon={step === STEPS.length - 1 ? <Sparkles className="size-4" /> : undefined}
+          icon={step === STEPS.length - 1 ? <PANEL_ICONS.blocks className="size-4" /> : undefined}
           onClick={() => {
             if (step === STEPS.length - 1) close();
             else setStep((value) => value + 1);

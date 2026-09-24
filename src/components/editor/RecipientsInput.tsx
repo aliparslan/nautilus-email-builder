@@ -45,12 +45,8 @@ export function RecipientsInput({
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (
-      e.key === "Enter" ||
-      e.key === "," ||
-      e.key === " " ||
-      e.key === "Tab"
-    ) {
+    // Tab must remain native navigation; onBlur commits the draft.
+    if (e.key === "Enter" || e.key === "," || e.key === " ") {
       if (draft.trim()) {
         e.preventDefault();
         commit(draft);
@@ -90,6 +86,7 @@ export function RecipientsInput({
         ))}
         <input
           id={id}
+          aria-label="Email addresses"
           type="email"
           multiple
           autoFocus={autoFocus}

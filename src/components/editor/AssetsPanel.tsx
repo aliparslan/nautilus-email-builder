@@ -2,7 +2,7 @@
 
 import { Drawer } from "@puckeditor/core";
 import { ImagePlus } from "lucide-react";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { fileToDataUrl } from "@/components/fields/ImageField";
 import { MISTER_ASSETS } from "@/brands/mister";
 import type { EmailData } from "@/email/config";
@@ -124,37 +124,47 @@ function AssetTile({ id, name, alt, thumbnail, src, onInsert, onDragStart }: {
   onInsert: (src: string, alt?: string) => void;
   onDragStart: (asset: ImageAsset | null) => void;
 }) {
-  const asset: ImageAsset = { src, alt };
+  // Puck uses Drawer.Item's child as a component type; keep it stable across document edits.
+  const latest = useRef({ name, alt, thumbnail, src, onInsert, onDragStart });
+  useEffect(() => {
+    latest.current = { name, alt, thumbnail, src, onInsert, onDragStart };
+  }, [name, alt, thumbnail, src, onInsert, onDragStart]);
+  const renderTile = useCallback(() => {
+    const current = latest.current;
+    const activate = () => {
+      current.onDragStart(null);
+      current.onInsert(current.src, current.alt);
+    };
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onPointerDown={() =>
+          current.onDragStart({ src: current.src, alt: current.alt })
+        }
+        onDragEnd={() => current.onDragStart(null)}
+        onPointerCancel={() => current.onDragStart(null)}
+        onClick={activate}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            activate();
+          }
+        }}
+        title={`Insert ${current.name}; drag to place`}
+        className="group cursor-grab focus-visible:outline-2 focus-visible:outline-brand active:cursor-grabbing"
+      >
+        <span className="block aspect-[4/3] overflow-hidden rounded-lg border border-divide bg-white p-2 transition-colors group-hover:border-brand/60 dark:border-neutral-700 dark:bg-neutral-900">
+          {/* eslint-disable-next-line @next/next/no-img-element -- supports local, remote, and data URL assets */}
+          <img src={current.thumbnail} alt="" draggable={false} className="h-full w-full object-contain" />
+        </span>
+        <span className="mt-1.5 block truncate text-[11px] font-medium text-charcoal-800 dark:text-neutral-200">{current.name}</span>
+      </div>
+    );
+  }, []);
   return (
     <Drawer.Item id={id} name="Image" label={name}>
-      {() => (
-        <div
-          role="button"
-          tabIndex={0}
-          onPointerDown={() => onDragStart(asset)}
-          onDragEnd={() => onDragStart(null)}
-          onPointerCancel={() => onDragStart(null)}
-          onClick={() => {
-            onDragStart(null);
-            onInsert(src, alt);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              onDragStart(null);
-              onInsert(src, alt);
-            }
-          }}
-          title={`Insert ${name}; drag to place`}
-          className="group cursor-grab focus-visible:outline-2 focus-visible:outline-brand active:cursor-grabbing"
-        >
-          <span className="block aspect-[4/3] overflow-hidden rounded-lg border border-divide bg-white p-2 transition-colors group-hover:border-brand/60 dark:border-neutral-700 dark:bg-neutral-900">
-            {/* eslint-disable-next-line @next/next/no-img-element -- supports local, remote, and data URL assets */}
-            <img src={thumbnail} alt="" draggable={false} className="h-full w-full object-contain" />
-          </span>
-          <span className="mt-1.5 block truncate text-[11px] font-medium text-charcoal-800 dark:text-neutral-200">{name}</span>
-        </div>
-      )}
+      {renderTile}
     </Drawer.Item>
   );
 }

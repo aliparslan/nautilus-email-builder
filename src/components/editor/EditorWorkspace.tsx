@@ -68,6 +68,9 @@ type Panel =
 type DialogName =
   "recipients" | "review" | "shortcuts" | "clear" | "walkthrough" | null;
 type Mode = "now" | "later";
+export type DroppedItem =
+  | { id: string; kind: "asset"; asset: ImageAsset }
+  | { id: string; kind: "pattern"; pattern: SavedPattern };
 const WALKTHROUGH_KEY = "nautilus-email:walkthrough:v1";
 
 const RAIL_TOP = [
@@ -128,11 +131,13 @@ export function EditorWorkspace({
   onSaveNow,
   onAssetDragStart,
   onPatternDragStart,
+  registerDrop,
 }: {
   savedAt: string | null;
   onSaveNow: () => boolean;
   onAssetDragStart: (asset: ImageAsset | null) => void;
   onPatternDragStart: (pattern: SavedPattern | null) => void;
+  registerDrop: (handler: ((drop: DroppedItem) => void) | null) => void;
 }) {
   const data = useEmailPuck((store) => store.appState.data as EmailData);
   const layerStyles = useMemo(() => layerIconStyles(data), [data]);
@@ -204,36 +209,22 @@ export function EditorWorkspace({
   }, [theme]);
 
   useEffect(() => {
-    const onDrop = (event: Event) => {
-      const { id, asset } = (
-        event as CustomEvent<{ id: string; asset: ImageAsset }>
-      ).detail;
+    registerDrop((drop) => {
       dispatch({
         type: "setData",
         recordHistory: true,
         data: (previous) =>
-          setImageAsset(previous as EmailData, id, asset) as Data,
+          (drop.kind === "asset"
+            ? setImageAsset(previous as EmailData, drop.id, drop.asset)
+            : setSavedNode(
+                previous as EmailData,
+                drop.id,
+                drop.pattern.node,
+              )) as Data,
       });
-    };
-    window.addEventListener("nautilus:asset-dropped", onDrop);
-    return () => window.removeEventListener("nautilus:asset-dropped", onDrop);
-  }, [dispatch]);
-
-  useEffect(() => {
-    const onDrop = (event: Event) => {
-      const { id, pattern } = (
-        event as CustomEvent<{ id: string; pattern: SavedPattern }>
-      ).detail;
-      dispatch({
-        type: "setData",
-        recordHistory: true,
-        data: (previous) =>
-          setSavedNode(previous as EmailData, id, pattern.node) as Data,
-      });
-    };
-    window.addEventListener("nautilus:pattern-dropped", onDrop);
-    return () => window.removeEventListener("nautilus:pattern-dropped", onDrop);
-  }, [dispatch]);
+    });
+    return () => registerDrop(null);
+  }, [dispatch, registerDrop]);
 
   const title =
     data.root.props?.projectTitle ||

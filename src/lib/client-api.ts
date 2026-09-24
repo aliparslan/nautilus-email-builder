@@ -21,7 +21,8 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
       ...init,
       headers: { "content-type": "application/json", ...init?.headers },
     });
-  } catch {
+  } catch (error) {
+    if (init?.signal?.aborted) throw error;
     throw new ApiClientError(
       "Can't reach the server. Check your connection.",
       0,
@@ -40,10 +41,11 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  render: (data: EmailData) =>
+  render: (data: EmailData, signal?: AbortSignal) =>
     request<RenderedEmail & { from: string; fromEmail: string }>("/api/email/render", {
       method: "POST",
       body: JSON.stringify({ data }),
+      signal,
     }),
 
   send: (payload: { data: EmailData; to: string[]; subject: string; senderLocalPart?: string }) =>

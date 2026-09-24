@@ -9,7 +9,19 @@ import { useSavedTemplates } from "@/hooks/useSavedTemplates";
 import { api } from "@/lib/client-api";
 import { EmailSnapshotDialog } from "./EmailSnapshotDialog";
 
-const cache = new Map<string, string>();
+// Cache the promise too, so effect reruns don't launch duplicate renders.
+const cache = new Map<string, Promise<string>>();
+
+function thumbnailFor(template: EmailTemplate): Promise<string> {
+  const cached = cache.get(template.id);
+  if (cached) return cached;
+  const request = api.render(template.data).then(({ html }) => html);
+  cache.set(template.id, request);
+  void request.catch(() => {
+    if (cache.get(template.id) === request) cache.delete(template.id);
+  });
+  return request;
+}
 
 export function TemplatesPanel({
   data,
@@ -22,25 +34,30 @@ export function TemplatesPanel({
   const [preview, setPreview] = useState<EmailTemplate | null>(null);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
-  const [thumbnails, setThumbnails] = useState<Record<string, string>>(() =>
-    Object.fromEntries(cache),
-  );
+  const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
   const allTemplates = useMemo(
     () => [...saved.items, ...templates],
     [saved.items],
   );
 
   useEffect(() => {
+    let active = true;
     for (const template of allTemplates) {
-      if (cache.has(template.id)) continue;
-      api
-        .render(template.data)
-        .then(({ html }) => {
-          cache.set(template.id, html);
-          setThumbnails((current) => ({ ...current, [template.id]: html }));
+      const request = thumbnailFor(template);
+      void request
+        .then((html) => {
+          if (active && cache.get(template.id) === request)
+            setThumbnails((current) =>
+              current[template.id] === html
+                ? current
+                : { ...current, [template.id]: html },
+            );
         })
         .catch(() => {});
     }
+    return () => {
+      active = false;
+    };
   }, [allTemplates]);
 
   function save() {

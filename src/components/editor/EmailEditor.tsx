@@ -2,14 +2,14 @@
 
 import { Puck } from "@puckeditor/core";
 import { MotionConfig } from "motion/react";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Toaster } from "sonner";
 import { emailConfig, type EmailData } from "@/email/config";
 import { defaultTemplate } from "@/email/templates";
 import { DEFAULT_ROOT_PROPS } from "@/email/root";
 import { loadDraft, useDraftAutosave } from "@/hooks/useDraft";
 import type { SavedPattern } from "@/hooks/usePatterns";
-import { EditorWorkspace } from "./EditorWorkspace";
+import { EditorWorkspace, type DroppedItem } from "./EditorWorkspace";
 import type { ImageAsset } from "./editor-data";
 
 export function EmailEditor() {
@@ -31,6 +31,10 @@ export function EmailEditor() {
   const { save, flush, savedAt } = useDraftAutosave();
   const draggedAsset = useRef<ImageAsset | null>(null);
   const draggedPattern = useRef<SavedPattern | null>(null);
+  const dropHandler = useRef<((drop: DroppedItem) => void) | null>(null);
+  const registerDrop = useCallback((handler: typeof dropHandler.current) => {
+    dropHandler.current = handler;
+  }, []);
 
   return (
     <MotionConfig reducedMotion="user">
@@ -39,42 +43,29 @@ export function EmailEditor() {
         data={initialData}
         onChange={save}
         onAction={(action) => {
+          if (action.type !== "insert" || !action.id) return;
+          let drop: DroppedItem | null = null;
           if (
-            action.type === "insert" &&
-            action.id &&
             draggedPattern.current &&
             action.componentType === draggedPattern.current.node.type
           ) {
-            const pattern = draggedPattern.current;
+            drop = {
+              id: action.id,
+              kind: "pattern",
+              pattern: draggedPattern.current,
+            };
             draggedPattern.current = null;
-            queueMicrotask(() =>
-              window.dispatchEvent(
-                new CustomEvent("nautilus:pattern-dropped", {
-                  detail: { id: action.id, pattern },
-                }),
-              ),
-            );
-          }
-          if (
-            action.type === "insert" &&
-            action.componentType === "Image" &&
-            action.id &&
-            draggedAsset.current
-          ) {
-            const asset = draggedAsset.current;
+          } else if (action.componentType === "Image" && draggedAsset.current) {
+            drop = { id: action.id, kind: "asset", asset: draggedAsset.current };
             draggedAsset.current = null;
-            queueMicrotask(() =>
-              window.dispatchEvent(
-                new CustomEvent("nautilus:asset-dropped", {
-                  detail: { id: action.id, asset },
-                }),
-              ),
-            );
           }
+          // Wait until Puck has inserted its placeholder before filling its props.
+          if (drop) queueMicrotask(() => dropHandler.current?.(drop));
         }}
       >
         <EditorWorkspace
           savedAt={savedAt}
+          registerDrop={registerDrop}
           onSaveNow={flush}
           onAssetDragStart={(asset) => {
             draggedAsset.current = asset;

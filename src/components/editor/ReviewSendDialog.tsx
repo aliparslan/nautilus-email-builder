@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarClock, Send } from "lucide-react";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { EmailData } from "@/email/config";
 import type { EmailActivity } from "@/hooks/useEmailHistory";
@@ -59,6 +59,8 @@ function ReviewSendForm({
   const [senderOverride, setSenderOverride] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const subjectRef = useRef<HTMLInputElement>(null);
+  const subjectId = useId();
+  const previewId = useId();
   const { rendered, loading, error: renderError } = useRenderedEmail(data);
   const senderLocalPart =
     senderOverride ?? rendered?.fromEmail?.split("@")[0] ?? "";
@@ -228,8 +230,9 @@ function ReviewSendForm({
               {addresses.length} / {MAX_RECIPIENTS} unique recipients
             </p>
           </Field>
-          <Field label="Email subject">
+          <Field label="Email subject" htmlFor={subjectId}>
             <input
+              id={subjectId}
               ref={subjectRef}
               value={subject}
               onChange={(event) => onSubjectChange(event.target.value)}
@@ -238,8 +241,9 @@ function ReviewSendForm({
               className="h-10 w-full rounded-lg border border-divide bg-white px-3 text-sm outline-none focus-visible:outline-2 focus-visible:outline-brand dark:border-neutral-700 dark:bg-neutral-950"
             />
           </Field>
-          <Field label="Email preview text">
+          <Field label="Email preview text" htmlFor={previewId}>
             <input
+              id={previewId}
               value={previewText}
               onChange={(event) => onPreviewTextChange(event.target.value)}
               disabled={submitting}
@@ -310,16 +314,24 @@ function ReviewSendForm({
 
 function Field({
   label,
+  htmlFor,
   children,
 }: {
   label: string;
+  htmlFor?: string;
   children: React.ReactNode;
 }) {
+  const className =
+    "mb-1.5 text-xs font-semibold text-gray-600 dark:text-neutral-400";
   return (
     <div>
-      <div className="mb-1.5 text-xs font-semibold text-gray-600 dark:text-neutral-400">
-        {label}
-      </div>
+      {htmlFor ? (
+        <label htmlFor={htmlFor} className={`block ${className}`}>
+          {label}
+        </label>
+      ) : (
+        <div className={className}>{label}</div>
+      )}
       {children}
     </div>
   );

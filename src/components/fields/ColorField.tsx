@@ -66,6 +66,8 @@ export function ColorField({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const paletteRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => savePalette(palette), [palette]);
+
   useEffect(() => {
     if (!open) return;
 
@@ -123,9 +125,7 @@ export function ColorField({
         current.some((item) => item.toLowerCase() === normalized)
       )
         return current;
-      const next = [...current, normalized];
-      savePalette(next);
-      return next;
+      return [...current, normalized];
     });
   }
 
@@ -224,7 +224,6 @@ export function ColorField({
                     onClick={() => {
                       const next = palette.filter((item) => item !== color);
                       setPalette(next);
-                      savePalette(next);
                     }}
                   >
                     <X className="size-2.5" />

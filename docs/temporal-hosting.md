@@ -2,6 +2,8 @@
 
 **Recommended:** Keep the Next.js app on Vercel, use [Temporal Cloud](https://docs.temporal.io/cloud/get-started) for durable workflows, and run this repo's worker as a separate, always-on Fly.io app. You do not need a VPS or a hostname under `alip.dev` for this arrangement. The web app and worker both make outbound TLS connections to Temporal Cloud. The worker also calls Resend when a scheduled email becomes due.
 
+**Do you have to use Temporal Cloud? No.** `bun run worker` on a Fly Machine works exactly as it does locally, but the worker only *polls and executes* tasks. A separate Temporal **service** stores workflow state and durable timers. In local development, `temporal server start-dev` supplies that service; running only the worker on Fly while leaving the dev server on your laptop would stop scheduling when your laptop is off. Fly can also host a self-managed Temporal service, but then you need a persistent database, backups, upgrades, and a secure TLS/authenticated gRPC endpoint that your Vercel app can reach. Do **not** deploy `temporal server start-dev` as the production service. Temporal Cloud + one Fly worker is the simplest reliable choice here; self-hosting trades the Cloud bill for operational work. Cloudflare is fine for DNS, but a standard Cloudflare Worker is not a drop-in long-running Node Temporal worker or Temporal service.
+
 ## 1. Create the Temporal Cloud namespace
 
 1. Create a namespace in the [Temporal Cloud console](https://docs.temporal.io/cloud/namespaces) and choose API key authentication.
@@ -66,4 +68,4 @@ Rent a persistent Linux VPS from a VM provider. Cloudflare can still handle the 
 4. Publish only the Next app's HTTP port through a Cloudflare Tunnel. [Cloudflare Tunnel does not support a public-hostname route for gRPC](https://developers.cloudflare.com/network/grpc-connections/), so `temporal.alip.dev` is not a drop-in endpoint for this app.
 5. Test sending, scheduling, cancelling, restarting the worker, and restarting the VM before relying on scheduled delivery.
 
-If the Next app remains on Vercel while Temporal is on your VPS, the current client configuration is insufficient for a secure public self-hosted gRPC endpoint. That would require TLS and authentication work. Temporal Cloud avoids that extra integration; moving the app to the VPS keeps Temporal private.
+The same applies if you self-host the Temporal service on Fly instead of a VPS: the Fly worker could use Fly's private network, but the Vercel app still needs secure public gRPC access to start/list/cancel workflows. The current client configuration is insufficient for a secure public self-hosted endpoint; add TLS and authentication before exposing it. Temporal Cloud avoids that extra integration. Moving the Next app and the worker onto the same private network as the self-hosted service is another option, but adds migration and database operations.

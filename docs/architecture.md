@@ -7,7 +7,7 @@ This is a single-user demo of a car wash email builder inside a Nautilus-styled 
 1. `src/components/editor/EmailEditor.tsx` loads the saved draft or a starter template and gives it to Puck. `src/components/editor/EditorWorkspace.tsx` composes Puck's preview, fields, outline, and drawer into the rail, panels, and canvas. Puck owns selection, nested drag and drop, rich text, and undo/redo.
 2. `src/email/config.tsx`, `src/email/root.tsx`, and `src/email/blocks/` define the Puck document, its editable fields, defaults, and React Email render functions. The internal project title lives in root props but is excluded from recipient-facing output. Device size, zoom, editor theme, and dark estimate are view state only.
 3. `src/email/render-tree.tsx` walks the saved Puck JSON and calls those same block render functions on the server. It converts Puck slots and rich-text HTML into the nodes that React Email needs. This small bridge is deliberate: Puck's hook-based read-only renderer cannot run reliably inside the Next server render path.
-4. `src/email/render.tsx` wraps the tree in an email document, renders HTML and plain text, and uses `juice` to inline CSS. `POST /api/email/render` supplies the review and dark-estimate views. Send and scheduled delivery call the same `renderEmail` function, so the review is based on the delivery renderer.
+4. `src/email/render.tsx` wraps the tree in an email document, renders HTML and plain text, and uses `juice` to inline CSS. `POST /api/email/render` supplies the review and dark-estimate views; review requests are debounced and obsolete requests are aborted. Send and scheduled delivery call the same `renderEmail` function, so the review is based on the delivery renderer.
 5. `src/lib/send-email.ts` is the single Resend adapter. `POST /api/email/send` validates the flat recipient list and sender local part before calling it. The sender domain is server-owned through `RESEND_FROM_EMAIL`.
 6. `POST /api/schedule` starts a Temporal workflow with a snapshot of the document, recipients, subject, sender, and delivery time. `src/temporal/workflows.ts` waits durably; `src/temporal/activities.ts` then calls the same send adapter. `src/lib/scheduler.ts` lists and cancels workflows.
 
@@ -44,7 +44,7 @@ The visual document is therefore the source of truth for both canvas content and
 - **Persist work across devices.** Add authentication and server storage for drafts, groups, patterns, templates, images, and email history. Browser storage is currently the only source for most of these items.
 - **Make delivery status meaningful.** Ingest Resend events for delivered, bounced, and complained messages; add suppression and unsubscribe handling before using the tool for a real marketing campaign.
 - **Add a send preflight.** Offer a test send, link and image checks, and focused email-client previews before final confirmation.
-- **Reduce editor integration costs.** Debounce and cancel obsolete render requests, stabilize Puck drawer renderers, and isolate version-sensitive outline customization behind an adapter and an integration test.
+- **Reduce editor integration costs.** Add browser integration tests for dragging, Puck upgrades, and version-sensitive outline customization. Explore skipping body renders on subject-only edits and replacing the custom server render bridge only after Next and worker parity tests.
 
 ## Running and deploying
 

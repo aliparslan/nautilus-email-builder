@@ -5,6 +5,7 @@ export async function sendScheduledEmail({
   data,
   to,
   subject,
+  senderLocalPart,
 }: ScheduledEmailInput): Promise<{ id: string }> {
-  return sendEmail({ data, to, subject });
+  return sendEmail({ data, to, subject, senderLocalPart });
 }

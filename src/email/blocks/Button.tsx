@@ -26,6 +26,7 @@ export type ButtonProps = {
 export const Button: ComponentConfig<ButtonProps> = {
   label: "Button",
   fields: {
+    align: alignField,
     text: { type: "text", label: "Label", contentEditable: true },
     href: { type: "text", label: "Link URL", placeholder: "https://" },
     backgroundColor: colorField("Background"),
@@ -33,13 +34,12 @@ export const Button: ComponentConfig<ButtonProps> = {
     fontSize: pxField("Font size", { min: 10, max: 32 }),
     borderRadius: pxField("Corner radius", { max: 40 }),
     padding: paddingField,
-    align: alignField,
     marginBottom: pxField("Space below", { max: 96 }),
   },
   defaultProps: {
     text: "Get started",
     href: "https://",
-    backgroundColor: "#033148",
+    backgroundColor: "#05b2df",
     color: "#ffffff",
     fontSize: 16,
     borderRadius: 12,

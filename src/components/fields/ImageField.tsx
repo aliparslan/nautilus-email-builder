@@ -88,7 +88,7 @@ export function ImageField({
   );
 }
 
-async function fileToDataUrl(file: File): Promise<string> {
+export async function fileToDataUrl(file: File): Promise<string> {
   // GIFs lose animation through a canvas; keep small ones untouched.
   if (file.type === "image/gif" && file.size <= MAX_BYTES)
     return readAsDataUrl(file);

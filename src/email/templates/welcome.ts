@@ -1,11 +1,11 @@
 import { padding } from "../fields/shared";
 import { block, document } from "./block";
 
-const LOGO = "https://www.nautilus.co/nautilus-logo.png";
+const LOGO = "https://cdn.bfldr.com/PENMAIHR/at/7n74b4hw42nr59f6wk46xkj/Mister_Logo-23-BlueYellow-RGB.png?format=png&width=450&height=153";
 
 export const welcome = document(
   {
-    subject: "Welcome to Unlimited",
+    subject: "Welcome to Unlimited Wash Club",
     previewText: "Your membership is active. Here's what happens next.",
   },
   [
@@ -14,9 +14,9 @@ export const welcome = document(
       children: [
         block("Image", "logo", {
           src: LOGO,
-          alt: "Nautilus",
+          alt: "Mister Car Wash",
           width: 140,
-          href: "https://www.nautilus.co",
+          href: "https://mistercarwash.com/",
           marginBottom: 0,
         }),
       ],
@@ -25,19 +25,19 @@ export const welcome = document(
       padding: padding(16, 32, 32),
       children: [
         block("Heading", "title", {
-          text: "Welcome to Unlimited",
+          text: "Welcome to Unlimited Wash Club",
           level: "h1",
           fontSize: 32,
         }),
         block("Text", "intro", {
           content:
-            "<p>Your <strong>Ceramic Unlimited</strong> plan is active. Pull up to any lane, and the camera takes care of the rest — no ticket, no waiting.</p><p>Your first renewal is on <strong>March 3</strong>. You can pause, upgrade, or switch vehicles anytime from your member portal.</p>",
+            "<p>Your <strong>Titanium Unlimited</strong> plan is active. Pull up to any lane and your member pass takes care of the rest.</p><p>Your first renewal is on <strong>March 3</strong>. You can manage your plan and payment details from your account.</p>",
           marginBottom: 24,
         }),
         block("Container", "plan", {
           children: [
             block("Heading", "plan-title", {
-              text: "Ceramic Unlimited · $39.99/mo",
+              text: "Titanium Unlimited",
               level: "h3",
               fontSize: 18,
               fontWeight: 600,
@@ -45,7 +45,7 @@ export const welcome = document(
             }),
             block("Text", "plan-perks", {
               content:
-                "<ul><li>Unlimited ceramic washes, every day</li><li>Free tire shine and interior vacuums</li><li>Cancel or pause in one tap</li></ul>",
+                "<ul><li>Unlimited washes</li><li>Titanium 360° protection</li><li>HotShine® Carnauba Wax and Wheel Polish</li></ul>",
               fontSize: 15,
               color: "#525252",
               marginBottom: 0,
@@ -55,7 +55,7 @@ export const welcome = document(
         block("Spacer", "gap", { height: 24 }),
         block("Button", "cta", {
           text: "Open member portal",
-          href: "https://www.nautilus.co",
+          href: "https://mistercarwash.com/",
           marginBottom: 0,
         }),
       ],
@@ -67,7 +67,7 @@ export const welcome = document(
         block("Spacer", "footer-gap", { height: 20 }),
         block("Text", "footer-text", {
           content:
-            '<p>Splash Car Wash · 525 Brannan St, San Francisco, CA</p><p>You\'re receiving this because you joined an Unlimited plan. <a href="https://www.nautilus.co">Manage preferences</a></p>',
+            '<p>Mister Car Wash · Your preferred location</p><p>You\'re receiving this because you joined Unlimited Wash Club®. <a href="https://mistercarwash.com/">Manage preferences</a></p>',
           fontSize: 13,
           lineHeight: 1.5,
           color: "#6f6f6f",

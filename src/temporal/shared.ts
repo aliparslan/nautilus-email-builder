@@ -5,6 +5,7 @@ export type ScheduledEmailInput = {
   data: EmailData;
   to: string[];
   subject: string;
+  senderLocalPart?: string;
   /** ISO 8601 */
   sendAt: string;
 };

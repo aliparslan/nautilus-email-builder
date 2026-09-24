@@ -20,6 +20,7 @@ const DEFAULT_SIZE: Record<Level, number> = { h1: 32, h2: 24, h3: 18 };
 export const Heading: ComponentConfig<HeadingProps> = {
   label: "Heading",
   fields: {
+    align: alignField,
     text: { type: "text", label: "Text", contentEditable: true },
     level: {
       type: "select",
@@ -41,7 +42,6 @@ export const Heading: ComponentConfig<HeadingProps> = {
       ],
     },
     color: colorField("Color"),
-    align: alignField,
     marginBottom: pxField("Space below", { max: 96 }),
   },
   defaultProps: {

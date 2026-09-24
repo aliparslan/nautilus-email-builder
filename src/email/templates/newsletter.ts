@@ -1,7 +1,7 @@
 import { padding } from "../fields/shared";
 import { block, document } from "./block";
 
-const LOGO = "https://www.nautilus.co/nautilus-logo.png";
+const LOGO = "https://cdn.bfldr.com/PENMAIHR/at/7n74b4hw42nr59f6wk46xkj/Mister_Logo-23-BlueYellow-RGB.png?format=png&width=450&height=153";
 
 export const newsletter = document(
   {
@@ -19,7 +19,7 @@ export const newsletter = document(
           col1: [
             block("Image", "logo", {
               src: LOGO,
-              alt: "Nautilus",
+              alt: "Mister Car Wash",
               width: 120,
               marginBottom: 0,
             }),
@@ -47,7 +47,7 @@ export const newsletter = document(
         }),
         block("Text", "lede", {
           content:
-            "<p>That's <strong>$168 of washes</strong> on a $39.99 plan — your membership paid for itself by the 4th. Here's what's new at Splash.</p>",
+            "<p>That's <strong>$168 of washes</strong> this month — your membership paid for itself by the 4th. Here's what's new at Mister.</p>",
           color: "#525252",
           marginBottom: 8,
         }),
@@ -67,7 +67,7 @@ export const newsletter = document(
                   text: "12",
                   level: "h2",
                   fontSize: 28,
-                  color: "#01b2de",
+                  color: "#05b2df",
                   marginBottom: 2,
                 }),
                 block("Text", "stat-1-l", {
@@ -87,7 +87,7 @@ export const newsletter = document(
                   text: "$168",
                   level: "h2",
                   fontSize: 28,
-                  color: "#01b2de",
+                  color: "#05b2df",
                   marginBottom: 2,
                 }),
                 block("Text", "stat-2-l", {
@@ -107,7 +107,7 @@ export const newsletter = document(
                   text: "4m 20s",
                   level: "h2",
                   fontSize: 28,
-                  color: "#01b2de",
+                  color: "#05b2df",
                   marginBottom: 2,
                 }),
                 block("Text", "stat-3-l", {
@@ -157,7 +157,7 @@ export const newsletter = document(
             }),
             block("Text", "n2-b", {
               content:
-                "<p>Ceramic members get a free <strong>clear-coat refresh</strong> through April. Just ask at the lane.</p>",
+                "<p>Titanium members get all-around protection and a mirror-like finish with every wash.</p>",
               fontSize: 15,
               color: "#525252",
             }),
@@ -166,7 +166,7 @@ export const newsletter = document(
         }),
         block("Button", "cta", {
           text: "See your wash history",
-          href: "https://www.nautilus.co",
+          href: "https://mistercarwash.com/",
           marginBottom: 8,
         }),
       ],
@@ -177,7 +177,7 @@ export const newsletter = document(
         block("Divider", "rule", { marginY: 8 }),
         block("Text", "footer-text", {
           content:
-            '<p>Splash Car Wash · 525 Brannan St, San Francisco, CA</p><p><a href="https://www.nautilus.co">Manage preferences</a> · <a href="https://www.nautilus.co">Unsubscribe</a></p>',
+            '<p>Mister Car Wash · Your preferred location</p><p><a href="https://mistercarwash.com/">Manage preferences</a> · <a href="https://mistercarwash.com/">Unsubscribe</a></p>',
           fontSize: 13,
           lineHeight: 1.5,
           color: "#6f6f6f",

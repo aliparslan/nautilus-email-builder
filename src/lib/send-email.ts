@@ -2,12 +2,13 @@ import { Resend } from "resend";
 import type { EmailData } from "@/email/config";
 import { extractInlineImages } from "@/email/inline-images";
 import { renderEmail } from "@/email/render";
-import { env, fromHeader } from "./env";
+import { env, senderHeader } from "./env";
 
 export type SendEmailInput = {
   data: EmailData;
   to: string[];
   subject: string;
+  senderLocalPart?: string;
 };
 
 export class SendEmailError extends Error {
@@ -26,6 +27,7 @@ export async function sendEmail({
   data,
   to,
   subject,
+  senderLocalPart,
 }: SendEmailInput): Promise<{ id: string }> {
   if (!env.resendApiKey) {
     throw new SendEmailError(
@@ -40,7 +42,7 @@ export async function sendEmail({
 
   const resend = new Resend(env.resendApiKey);
   const { data: result, error } = await resend.emails.send({
-    from: fromHeader,
+    from: senderHeader(senderLocalPart),
     to,
     subject,
     html,

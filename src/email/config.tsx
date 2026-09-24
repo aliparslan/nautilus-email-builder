@@ -5,6 +5,16 @@ import { Container, type ContainerProps } from "./blocks/Container";
 import { Divider, type DividerProps } from "./blocks/Divider";
 import { Heading, type HeadingProps } from "./blocks/Heading";
 import { Image, type ImageProps } from "./blocks/Image";
+import {
+  MisterHeader,
+  type MisterHeaderProps,
+  MisterLocationCta,
+  type MisterLocationCtaProps,
+  MisterMembershipHero,
+  type MisterMembershipHeroProps,
+  MisterProductSpotlight,
+  type MisterProductSpotlightProps,
+} from "./blocks/MisterPatterns";
 import { Section, type SectionProps } from "./blocks/Section";
 import { Spacer, type SpacerProps } from "./blocks/Spacer";
 import { Text, type TextProps } from "./blocks/Text";
@@ -22,22 +32,22 @@ export type EmailComponents = {
   Image: ImageProps;
   Divider: DividerProps;
   Spacer: SpacerProps;
+  MisterHeader: MisterHeaderProps;
+  MisterMembershipHero: MisterMembershipHeroProps;
+  MisterProductSpotlight: MisterProductSpotlightProps;
+  MisterLocationCta: MisterLocationCtaProps;
 };
 
 export type EmailConfig = Config<{
   components: EmailComponents;
   root: EmailRootProps;
-  categories: ["layout", "content"];
+  categories: ["layout", "content", "patterns"];
 }>;
 
 /** Puck `Data` for an email document. This JSON is the single source of truth for editor, preview, and send. */
 export type EmailData = Data<EmailComponents, EmailRootProps>;
 
-/**
- * One config drives both the editor canvas (<Puck>) and the sent HTML (<Render>).
- * Every block renders React Email primitives with explicit inline styles, so what the
- * canvas shows is, by construction, what the email client receives.
- */
+/** The editor and server renderer share these block render functions. */
 export const emailConfig: EmailConfig = {
   root: emailRoot,
   categories: {
@@ -48,6 +58,15 @@ export const emailConfig: EmailConfig = {
     content: {
       title: "Content",
       components: ["Heading", "Text", "Button", "Image"],
+    },
+    patterns: {
+      title: "Patterns",
+      components: [
+        "MisterHeader",
+        "MisterMembershipHero",
+        "MisterProductSpotlight",
+        "MisterLocationCta",
+      ],
     },
   },
   components: {
@@ -60,5 +79,9 @@ export const emailConfig: EmailConfig = {
     Image,
     Divider,
     Spacer,
+    MisterHeader,
+    MisterMembershipHero,
+    MisterProductSpotlight,
+    MisterLocationCta,
   },
 };

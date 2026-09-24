@@ -16,6 +16,7 @@ export type ImageProps = {
 export const Image: ComponentConfig<ImageProps> = {
   label: "Image",
   fields: {
+    align: alignField,
     src: imageField("Image"),
     alt: { type: "text", label: "Alt text" },
     width: pxField("Width", { min: 16, max: 600 }),
@@ -25,12 +26,11 @@ export const Image: ComponentConfig<ImageProps> = {
       label: "Link URL (optional)",
       placeholder: "https://",
     },
-    align: alignField,
     marginBottom: pxField("Space below", { max: 96 }),
   },
   defaultProps: {
-    src: "https://www.nautilus.co/nautilus-logo.png",
-    alt: "Nautilus",
+    src: "https://cdn.bfldr.com/PENMAIHR/at/7n74b4hw42nr59f6wk46xkj/Mister_Logo-23-BlueYellow-RGB.png?format=png&width=450&height=153",
+    alt: "Mister Car Wash",
     width: 160,
     borderRadius: 0,
     href: "",

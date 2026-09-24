@@ -23,6 +23,7 @@ export const sendRequestSchema = z.object({
   data: emailDataSchema,
   to: recipientsSchema,
   subject: z.string().trim().min(1, "Subject is required").max(200),
+  senderLocalPart: z.string().trim().regex(/^[a-zA-Z0-9][a-zA-Z0-9._+-]{0,63}$/, "Enter a valid sender address before @").optional(),
 });
 
 export const scheduleRequestSchema = sendRequestSchema.extend({

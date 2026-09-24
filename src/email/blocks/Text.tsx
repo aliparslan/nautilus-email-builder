@@ -1,6 +1,11 @@
 import type { ComponentConfig, RichText } from "@puckeditor/core";
 import { colorField } from "../fields/color";
-import { alignField, pxField, type Align } from "../fields/shared";
+import {
+  alignField,
+  numberField,
+  pxField,
+  type Align,
+} from "../fields/shared";
 
 export type TextProps = {
   content: RichText;
@@ -20,6 +25,7 @@ export type TextProps = {
 export const Text: ComponentConfig<TextProps> = {
   label: "Text",
   fields: {
+    align: alignField,
     content: {
       type: "richtext",
       label: "Content",
@@ -35,15 +41,8 @@ export const Text: ComponentConfig<TextProps> = {
       },
     },
     fontSize: pxField("Font size", { min: 10, max: 40 }),
-    lineHeight: {
-      type: "number",
-      label: "Line height",
-      min: 1,
-      max: 2.5,
-      step: 0.1,
-    },
+    lineHeight: numberField("Line height", { min: 1, max: 2.5, step: 0.1 }),
     color: colorField("Color"),
-    align: alignField,
     marginBottom: pxField("Space below", { max: 96 }),
   },
   defaultProps: {

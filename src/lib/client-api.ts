@@ -41,12 +41,12 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   render: (data: EmailData) =>
-    request<RenderedEmail & { from: string }>("/api/email/render", {
+    request<RenderedEmail & { from: string; fromEmail: string }>("/api/email/render", {
       method: "POST",
       body: JSON.stringify({ data }),
     }),
 
-  send: (payload: { data: EmailData; to: string[]; subject: string }) =>
+  send: (payload: { data: EmailData; to: string[]; subject: string; senderLocalPart?: string }) =>
     request<{ id: string }>("/api/email/send", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -56,6 +56,7 @@ export const api = {
     data: EmailData;
     to: string[];
     subject: string;
+    senderLocalPart?: string;
     sendAt: string;
   }) =>
     request<{ item: ScheduledEmail }>("/api/schedule", {

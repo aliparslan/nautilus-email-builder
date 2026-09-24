@@ -6,6 +6,9 @@ import * as activities from "./activities";
 async function main() {
   const connection = await NativeConnection.connect({
     address: env.temporalAddress,
+    ...(env.temporalApiKey
+      ? { apiKey: env.temporalApiKey, tls: true }
+      : {}),
   });
 
   const worker = await Worker.create({

@@ -8,6 +8,9 @@ export function getTemporalClient(): Promise<Client> {
   clientPromise ??= Connection.connect({
     address: env.temporalAddress,
     connectTimeout: "3s",
+    ...(env.temporalApiKey
+      ? { apiKey: env.temporalApiKey, tls: true }
+      : {}),
   })
     .then(
       (connection) =>

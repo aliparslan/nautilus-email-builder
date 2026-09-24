@@ -7,7 +7,7 @@ import { api, ApiClientError } from "@/lib/client-api";
 
 type Result = {
   forData: EmailData;
-  rendered: (RenderedEmail & { from: string }) | null;
+  rendered: (RenderedEmail & { from: string; fromEmail: string }) | null;
   error: string | null;
 };
 

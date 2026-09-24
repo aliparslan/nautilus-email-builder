@@ -1,11 +1,11 @@
 import { padding } from "../fields/shared";
 import { block, document } from "./block";
 
-const LOGO = "https://www.nautilus.co/nautilus-logo.png";
+const LOGO = "https://cdn.bfldr.com/PENMAIHR/at/7n74b4hw42nr59f6wk46xkj/Mister_Logo-23-BlueYellow-RGB.png?format=png&width=450&height=153";
 
 export const promo = document(
   {
-    subject: "Upgrade to Ceramic, first month on us",
+    subject: "Upgrade to Titanium, first month on us",
     previewText: "Spring pollen doesn't stand a chance. Offer ends Sunday.",
     backgroundColor: "#0a1f3d",
     contentBackgroundColor: "#ffffff",
@@ -17,7 +17,7 @@ export const promo = document(
       children: [
         block("Image", "logo", {
           src: LOGO,
-          alt: "Nautilus",
+          alt: "Mister Car Wash",
           width: 130,
           align: "center",
           marginBottom: 28,
@@ -30,7 +30,7 @@ export const promo = document(
           marginBottom: 12,
         }),
         block("Heading", "title", {
-          text: "Upgrade to Ceramic. First month on us.",
+          text: "Upgrade to Titanium. First month on us.",
           level: "h1",
           fontSize: 34,
           color: "#ffffff",
@@ -39,7 +39,7 @@ export const promo = document(
         }),
         block("Text", "lede", {
           content:
-            "<p>Ceramic Unlimited adds a hydrophobic coat every wash, so pollen, rain and road grime rinse off before they stick. Switch by Sunday and your first month is <strong>$0</strong>.</p>",
+            "<p>Titanium delivers 360° protection, underbody corrosion defense, and a mirror-like finish. Switch by Sunday and your first month is <strong>$0</strong>.</p>",
           fontSize: 17,
           lineHeight: 1.55,
           color: "#c2ecf7",
@@ -48,9 +48,9 @@ export const promo = document(
         }),
         block("Button", "cta", {
           text: "Upgrade for $0",
-          href: "https://www.nautilus.co",
-          backgroundColor: "#01b2de",
-          color: "#033148",
+          href: "https://mistercarwash.com/",
+          backgroundColor: "#05b2df",
+          color: "#ffffff",
           align: "center",
           marginBottom: 0,
         }),
@@ -81,7 +81,7 @@ export const promo = document(
                   marginBottom: 6,
                 }),
                 block("Heading", "cur-name", {
-                  text: "Deluxe Unlimited",
+                  text: "Platinum Unlimited",
                   level: "h3",
                   fontSize: 17,
                   fontWeight: 600,
@@ -89,7 +89,7 @@ export const promo = document(
                 }),
                 block("Text", "cur-perks", {
                   content:
-                    "<ul><li>Unlimited washes</li><li>Tire shine</li><li>Interior vacuums</li></ul>",
+                    "<ul><li>Unlimited washes</li><li>HotShine® Carnauba Wax</li><li>Platinum Repel Shield</li></ul>",
                   fontSize: 14,
                   color: "#525252",
                   marginBottom: 0,
@@ -100,7 +100,7 @@ export const promo = document(
           col2: [
             block("Container", "plan-next", {
               backgroundColor: "#effafd",
-              borderColor: "#01b2de",
+              borderColor: "#05b2df",
               padding: padding(20),
               children: [
                 block("Text", "next-label", {
@@ -118,7 +118,7 @@ export const promo = document(
                 }),
                 block("Text", "next-perks", {
                   content:
-                    "<ul><li>Everything in Deluxe</li><li><strong>Ceramic coat every wash</strong></li><li>Priority express lane</li></ul>",
+                    "<ul><li>Everything in Platinum</li><li><strong>Titanium 360° every wash</strong></li><li>Underbody corrosion defense</li></ul>",
                   fontSize: 14,
                   color: "#525252",
                   marginBottom: 0,
@@ -136,7 +136,7 @@ export const promo = document(
         block("Divider", "rule", { marginY: 8 }),
         block("Text", "fine", {
           content:
-            '<p>Offer valid for active Deluxe members through Sunday. Renews at $39.99/mo after the first month; cancel anytime.</p><p>Splash Car Wash · 525 Brannan St, San Francisco, CA · <a href="https://www.nautilus.co">Unsubscribe</a></p>',
+            '<p>Offer valid for active Platinum members through Sunday. Regular pricing varies by location; cancel anytime.</p><p>Mister Car Wash · Your preferred location · <a href="https://mistercarwash.com/">Unsubscribe</a></p>',
           fontSize: 12,
           lineHeight: 1.5,
           color: "#8a8a8a",

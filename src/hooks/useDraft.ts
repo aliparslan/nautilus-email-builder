@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { EmailData } from "@/email/config";
+import { DEFAULT_ROOT_PROPS } from "@/email/root";
 
 const KEY = "nautilus-email:draft:v1";
 const DEBOUNCE_MS = 400;
@@ -11,14 +12,21 @@ type Draft = { data: EmailData; savedAt: string };
 export function loadDraft(): Draft | null {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as Draft) : null;
+    if (!raw) return null;
+    const draft = JSON.parse(raw) as Draft;
+    // Older drafts predate the separate internal project name.
+    draft.data.root.props = {
+      ...DEFAULT_ROOT_PROPS,
+      ...draft.data.root.props,
+      projectTitle:
+        draft.data.root.props?.projectTitle ||
+        draft.data.root.props?.subject ||
+        "Untitled email",
+    };
+    return draft;
   } catch {
     return null;
   }
-}
-
-export function clearDraft() {
-  localStorage.removeItem(KEY);
 }
 
 /** Debounced localStorage autosave. `save` queues; `flush` writes immediately (⌘S). */

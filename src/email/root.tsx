@@ -6,6 +6,8 @@ import { emailFont, fontOptions, type EmailFontKey } from "./fonts";
 import { EMAIL_ROOT_CLASS, emailCss } from "./styles";
 
 export type EmailRootProps = {
+  /** Internal draft name; never rendered in the email. */
+  projectTitle: string;
   subject: string;
   previewText: string;
   fontFamily: EmailFontKey;
@@ -16,13 +18,14 @@ export type EmailRootProps = {
 };
 
 export const DEFAULT_ROOT_PROPS: EmailRootProps = {
+  projectTitle: "Untitled email",
   subject: "",
   previewText: "",
   fontFamily: "inter",
   backgroundColor: "#f5f5f5",
   contentBackgroundColor: "#ffffff",
   contentWidth: 600,
-  linkColor: "#01b2de",
+  linkColor: "#05b2df",
 };
 
 /**
@@ -32,16 +35,17 @@ export const DEFAULT_ROOT_PROPS: EmailRootProps = {
  */
 export const emailRoot: RootConfig<EmailRootProps> = {
   fields: {
-    subject: { type: "text", label: "Subject" },
+    projectTitle: { type: "text", label: "Project title" },
+    contentWidth: pxField("Email width", { min: 320, max: 800, step: 10 }),
+    subject: { type: "text", label: "Email subject" },
     previewText: {
       type: "text",
-      label: "Preview text",
+      label: "Email preview text",
       placeholder: "Shown after the subject in most inboxes",
     },
     fontFamily: { type: "select", label: "Font", options: fontOptions },
     backgroundColor: colorField("Page background"),
     contentBackgroundColor: colorField("Content background"),
-    contentWidth: pxField("Content width", { min: 320, max: 800, step: 10 }),
     linkColor: colorField("Link color"),
   },
   defaultProps: DEFAULT_ROOT_PROPS,
@@ -70,6 +74,7 @@ export const emailRoot: RootConfig<EmailRootProps> = {
           <Row>
             <Column style={{ padding: "32px 12px" }}>
               <Container
+                className="email-content"
                 style={{
                   maxWidth: contentWidth,
                   backgroundColor: contentBackgroundColor,

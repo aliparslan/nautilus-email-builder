@@ -37,6 +37,15 @@ The visual document is therefore the source of truth for both canvas content and
 - **Image delivery.** Uploaded local images are embedded as CID attachments. This avoids a media backend, at the cost of message size. Remote assets remain remote URLs.
 - **Scheduling runtime.** The web app can run on Vercel. Temporal needs a reachable service and a continuously running Node worker; a serverless request alone cannot wait for scheduled work. The included `Dockerfile.worker` and `fly.worker.toml` run that worker on Fly.io while Temporal Cloud stores the workflows. Cloudflare can provide DNS or a custom domain for the web app.
 
+## Future goals
+
+- **Polish the brand and user flow.** Match Nautilus typography, iconography, and spacing more closely; simplify how people move from building to recipients, review, and scheduling. Validate the layout at smaller desktop widths with keyboard and screen-reader checks.
+- **Import recipient CSV files.** Preview parsed rows, report invalid addresses, deduplicate across direct addresses and groups, and enforce the 50-recipient limit before saving or sending.
+- **Persist work across devices.** Add authentication and server storage for drafts, groups, patterns, templates, images, and email history. Browser storage is currently the only source for most of these items.
+- **Make delivery status meaningful.** Ingest Resend events for delivered, bounced, and complained messages; add suppression and unsubscribe handling before using the tool for a real marketing campaign.
+- **Add a send preflight.** Offer a test send, link and image checks, and focused email-client previews before final confirmation.
+- **Reduce editor integration costs.** Debounce and cancel obsolete render requests, stabilize Puck drawer renderers, and isolate version-sensitive outline customization behind an adapter and an integration test.
+
 ## Running and deploying
 
 Local development:

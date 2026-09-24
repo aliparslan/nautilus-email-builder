@@ -12,9 +12,9 @@ export function ShortcutsDialog({
   onClose: () => void;
 }) {
   return (
-    <Dialog open={open} onClose={onClose} eyebrow="Keyboard" title="Shortcuts">
+    <Dialog open={open} onClose={onClose} title="Shortcuts">
       <DialogBody>
-        <div className="grid gap-6 p-6 sm:grid-cols-2">
+        <div className="grid gap-5 px-6 pt-1 pb-6 sm:grid-cols-2">
           <Group title="Editor">
             {SHORTCUTS.map((s) => (
               <Row key={s.id} keys={s.keys} label={s.label} />
@@ -24,11 +24,7 @@ export function ShortcutsDialog({
             {PUCK_SHORTCUTS.map((s) => (
               <Row key={s.label} keys={s.keys} label={s.label} />
             ))}
-            <Row keys={["⎋"]} label="Close dialogs" />
-            <p className="mt-3 text-xs leading-relaxed text-gray-500">
-              Inside a text block, standard formatting shortcuts apply: bold,
-              italic, underline, and link.
-            </p>
+            <Row keys={["Esc"]} label="Close dialogs" />
           </Group>
         </div>
       </DialogBody>

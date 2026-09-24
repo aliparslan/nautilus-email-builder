@@ -4,116 +4,140 @@ import { CalendarClock, Send } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { EmailData } from "@/email/config";
+import type { EmailActivity } from "@/hooks/useEmailHistory";
+import type { useRecipients } from "@/hooks/useRecipients";
 import { useRenderedEmail } from "@/hooks/useRenderedEmail";
 import { api, ApiClientError } from "@/lib/client-api";
 import { cn } from "@/lib/cn";
-import {
-  defaultScheduleTime,
-  formatDateTime,
-  fromDatetimeLocal,
-  pluralize,
-  toDatetimeLocal,
-} from "@/lib/format";
+import { defaultScheduleTime, formatDateTime, pluralize } from "@/lib/format";
+import { MAX_RECIPIENTS } from "@/lib/recipients";
 import { Button } from "../ui/Button";
 import { Dialog, DialogBody, DialogFooter } from "../ui/Dialog";
 import { EmailPreviewFrame } from "./EmailPreviewFrame";
 import { RecipientsInput } from "./RecipientsInput";
+import { SchedulePicker } from "./SchedulePicker";
 
-const LAST_RECIPIENTS_KEY = "nautilus-email:last-recipients";
-
+type Mode = "now" | "later";
 type Props = {
   open: boolean;
   onClose: () => void;
+  initialMode: Mode;
   data: EmailData;
   subject: string;
+  previewText: string;
   onSubjectChange: (subject: string) => void;
+  onPreviewTextChange: (preview: string) => void;
+  recipients: ReturnType<typeof useRecipients>;
   onScheduled: () => void;
+  onActivity: (activity: EmailActivity) => void;
 };
 
 export function ReviewSendDialog({ open, onClose, subject, ...form }: Props) {
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      size="xl"
-      eyebrow="Review & send"
-      title={subject.trim() || "Untitled email"}
-      description="This is the rendered email exactly as Resend will deliver it."
-    >
-      {/* Mounted per open so recipients, mode and the data snapshot initialise fresh each time. */}
+    <Dialog open={open} onClose={onClose} size="xl" title="Send email">
       {open && <ReviewSendForm onClose={onClose} subject={subject} {...form} />}
     </Dialog>
   );
 }
 
-type Mode = "now" | "later";
-
 function ReviewSendForm({
   onClose,
-  data: liveData,
+  data,
   subject,
+  previewText,
   onSubjectChange,
+  onPreviewTextChange,
+  initialMode,
+  recipients,
   onScheduled,
+  onActivity,
 }: Omit<Props, "open">) {
-  // Snapshot so edits behind the dialog don't re-render the preview mid-review.
-  const [data] = useState(liveData);
-  const [to, setTo] = useState<string[]>(loadLastRecipients);
-  const [mode, setMode] = useState<Mode>("now");
-  const [minLocal] = useState(() =>
-    toDatetimeLocal(new Date(Date.now() + 60_000)),
-  );
-  const [sendAt, setSendAt] = useState(() =>
-    toDatetimeLocal(defaultScheduleTime()),
-  );
+  const [mode, setMode] = useState<Mode>(initialMode);
+  const [sendAt, setSendAt] = useState<Date>(defaultScheduleTime);
+  const [scheduleValid, setScheduleValid] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [senderOverride, setSenderOverride] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const subjectRef = useRef<HTMLInputElement>(null);
-
   const { rendered, loading, error: renderError } = useRenderedEmail(data);
-
-  const previewText =
-    typeof data.root.props?.previewText === "string"
-      ? data.root.props.previewText
-      : "";
-  // datetime-local strings sort lexicographically, so this stays pure.
-  const scheduleTooSoon = mode === "later" && sendAt < minLocal;
-  const scheduledDate = mode === "later" ? fromDatetimeLocal(sendAt) : null;
+  const senderLocalPart =
+    senderOverride ?? rendered?.fromEmail?.split("@")[0] ?? "";
+  const senderDomain = rendered?.fromEmail?.split("@").at(-1) ?? "…";
+  const { selection, groups, addresses, setSelection } = recipients;
 
   async function submit() {
+    const to = [...addresses]; // Expand groups at confirmation; scheduling stores this snapshot.
     if (!to.length) return setError("Add at least one recipient.");
+    if (to.length > MAX_RECIPIENTS)
+      return setError(
+        `You can send to up to ${MAX_RECIPIENTS} unique addresses.`,
+      );
     if (!subject.trim()) {
       subjectRef.current?.focus();
       return setError("Give the email a subject.");
     }
-    if (mode === "later" && (!scheduledDate || isTooSoon(scheduledDate))) {
+    if (!/^[a-zA-Z0-9][a-zA-Z0-9._+-]{0,63}$/.test(senderLocalPart.trim()))
+      return setError("Enter a valid From address before @.");
+    if (mode === "later" && sendAt.getTime() < Date.now() + 60_000)
       return setError("Pick a send time at least a minute from now.");
-    }
-
+    if (mode === "later" && !scheduleValid)
+      return setError("Enter a valid send time.");
     setSubmitting(true);
     setError(null);
-    localStorage.setItem(LAST_RECIPIENTS_KEY, JSON.stringify(to));
-
     try {
       if (mode === "now") {
-        await api.send({ data, to, subject: subject.trim() });
+        const result = await api.send({
+          data,
+          to,
+          subject: subject.trim(),
+          senderLocalPart: senderLocalPart.trim(),
+        });
+        onActivity({
+          id: result.id,
+          kind: "sent",
+          status: "sent",
+          subject: subject.trim(),
+          to,
+          senderLocalPart: senderLocalPart.trim(),
+          createdAt: new Date().toISOString(),
+          data,
+        });
         toast.success(`Sent to ${pluralize(to.length, "recipient")}`, {
           description: subject.trim(),
         });
       } else {
-        const iso = scheduledDate!.toISOString();
-        await api.schedule({ data, to, subject: subject.trim(), sendAt: iso });
+        const iso = sendAt.toISOString();
+        const { item } = await api.schedule({
+          data,
+          to,
+          subject: subject.trim(),
+          senderLocalPart: senderLocalPart.trim(),
+          sendAt: iso,
+        });
+        onActivity({
+          id: item.id,
+          kind: "scheduled",
+          status: item.status,
+          subject: item.subject,
+          to: item.to,
+          senderLocalPart: senderLocalPart.trim(),
+          sendAt: item.sendAt,
+          createdAt: item.createdAt,
+          data,
+        });
         toast.success(`Scheduled for ${formatDateTime(iso)}`, {
           description: `${pluralize(to.length, "recipient")} · ${subject.trim()}`,
           action: { label: "View scheduled", onClick: onScheduled },
         });
       }
       onClose();
-    } catch (e) {
+    } catch (cause) {
       const message =
-        e instanceof ApiClientError && e.code === "scheduler_unavailable"
-          ? "Scheduling needs the Temporal dev server and worker running — see the README. You can still send now."
-          : e instanceof Error
-            ? e.message
+        cause instanceof ApiClientError &&
+        cause.code === "scheduler_unavailable"
+          ? "Scheduling can't reach Temporal. Check the service and worker, or send now."
+          : cause instanceof Error
+            ? cause.message
             : "Something went wrong";
       setError(message);
       toast.error(mode === "now" ? "Couldn't send" : "Couldn't schedule", {
@@ -126,102 +150,141 @@ function ReviewSendForm({
 
   return (
     <>
-      <DialogBody className="flex h-[70vh] min-h-[480px]">
+      <DialogBody className="flex h-[min(78dvh,850px)] min-h-[480px] overflow-hidden">
         <div className="min-w-0 flex-1">
           <EmailPreviewFrame
             html={rendered?.html ?? null}
             loading={loading}
             error={renderError}
-            from={rendered?.from ?? "…"}
-            to={to}
             subject={subject}
             previewText={previewText}
           />
         </div>
-
-        <aside className="flex w-[360px] shrink-0 flex-col gap-5 overflow-auto border-l border-divide p-5 dark:border-neutral-800">
+        <aside className="flex w-[350px] shrink-0 flex-col gap-4 overflow-auto border-l border-divide p-5 dark:border-neutral-800">
+          <Field label="From">
+            <div className="flex h-10 min-w-0 items-center rounded-lg border border-divide bg-white px-3 text-sm focus-within:border-brand focus-within:ring-1 focus-within:ring-brand dark:border-neutral-700 dark:bg-neutral-950">
+              <input
+                aria-label="Sender address before @"
+                value={senderLocalPart}
+                onChange={(event) => setSenderOverride(event.target.value)}
+                disabled={submitting}
+                className="min-w-0 flex-1 bg-transparent outline-none"
+              />
+              <span className="shrink-0 text-gray-600 dark:text-neutral-400">
+                @{senderDomain}
+              </span>
+            </div>
+          </Field>
           <Field label="To">
             <RecipientsInput
-              value={to}
-              onChange={setTo}
+              value={selection.direct}
+              onChange={(direct) =>
+                setSelection((current) => ({ ...current, direct }))
+              }
               disabled={submitting}
-              autoFocus={!to.length}
+              autoFocus={!addresses.length}
+              showHelp={false}
             />
+            {groups.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {groups.map((group) => (
+                  <label
+                    key={group.id}
+                    className={cn(
+                      "flex cursor-pointer items-center gap-1 rounded-md border px-2 py-1 text-[11px]",
+                      selection.groupIds.includes(group.id)
+                        ? "border-brand bg-brand/10 text-brand-dark"
+                        : "border-divide",
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selection.groupIds.includes(group.id)}
+                      disabled={submitting}
+                      onChange={() =>
+                        setSelection((current) => ({
+                          ...current,
+                          groupIds: current.groupIds.includes(group.id)
+                            ? current.groupIds.filter((id) => id !== group.id)
+                            : [...current.groupIds, group.id],
+                        }))
+                      }
+                      className="accent-brand"
+                    />
+                    {group.name}
+                  </label>
+                ))}
+              </div>
+            )}
+            <p
+              role="status"
+              className={cn(
+                "mt-1.5 text-[11px] tabular-nums",
+                addresses.length > MAX_RECIPIENTS
+                  ? "text-danger"
+                  : "text-gray-600 dark:text-neutral-400",
+              )}
+            >
+              {addresses.length} / {MAX_RECIPIENTS} unique recipients
+            </p>
           </Field>
-
-          <Field
-            label="Subject"
-            hint="Also editable in the header. Saved with the email."
-          >
+          <Field label="Email subject">
             <input
               ref={subjectRef}
               value={subject}
-              onChange={(e) => onSubjectChange(e.target.value)}
+              onChange={(event) => onSubjectChange(event.target.value)}
               disabled={submitting}
               placeholder="Subject line"
-              className="h-10 w-full rounded-xl border border-divide bg-white px-3 text-sm outline-none transition placeholder:text-gray-500 focus:outline-2 focus:outline-offset-1 focus:outline-brand dark:border-neutral-700 dark:bg-neutral-900"
+              className="h-10 w-full rounded-lg border border-divide bg-white px-3 text-sm outline-none focus-visible:outline-2 focus-visible:outline-brand dark:border-neutral-700 dark:bg-neutral-950"
             />
           </Field>
-
+          <Field label="Email preview text">
+            <input
+              value={previewText}
+              onChange={(event) => onPreviewTextChange(event.target.value)}
+              disabled={submitting}
+              placeholder="Text shown in the inbox"
+              className="h-10 w-full rounded-lg border border-divide bg-white px-3 text-sm outline-none focus-visible:outline-2 focus-visible:outline-brand dark:border-neutral-700 dark:bg-neutral-950"
+            />
+          </Field>
           <Field label="Delivery">
-            <div
-              role="radiogroup"
-              className="grid grid-cols-2 gap-1 rounded-xl border border-divide p-1 dark:border-neutral-700"
-            >
-              {(["now", "later"] as const).map((m) => (
+            <div className="grid grid-cols-2 gap-1 rounded-lg bg-gray-200 p-1 dark:bg-neutral-800">
+              {(["now", "later"] as const).map((choice) => (
                 <button
-                  key={m}
+                  key={choice}
                   type="button"
-                  role="radio"
-                  aria-checked={mode === m}
+                  aria-pressed={mode === choice}
                   disabled={submitting}
-                  onClick={() => setMode(m)}
+                  onClick={() => setMode(choice)}
                   className={cn(
-                    "h-8 rounded-lg text-sm font-medium transition",
-                    mode === m
-                      ? "bg-navy text-white dark:bg-brand dark:text-navy"
-                      : "text-gray-600 hover:bg-gray-200 dark:text-neutral-400 dark:hover:bg-neutral-800",
+                    "h-8 rounded-md text-xs font-semibold",
+                    mode === choice
+                      ? "bg-white text-brand-dark shadow-sm dark:bg-neutral-700 dark:text-brand"
+                      : "text-gray-600 dark:text-neutral-400",
                   )}
                 >
-                  {m === "now" ? "Send now" : "Schedule"}
+                  {choice === "now" ? "Send now" : "Schedule"}
                 </button>
               ))}
             </div>
-            {mode === "later" && (
-              <div className="mt-3">
-                <input
-                  type="datetime-local"
-                  value={sendAt}
-                  min={minLocal}
-                  onChange={(e) => setSendAt(e.target.value)}
-                  disabled={submitting}
-                  className={cn(
-                    "h-10 w-full rounded-xl border bg-white px-3 text-sm outline-none transition focus:outline-2 focus:outline-offset-1 focus:outline-brand dark:bg-neutral-900",
-                    scheduleTooSoon
-                      ? "border-danger"
-                      : "border-divide dark:border-neutral-700",
-                  )}
-                />
-                <p className="mt-1.5 text-xs text-gray-500">
-                  {scheduledDate && !scheduleTooSoon
-                    ? `Delivers ${formatDateTime(scheduledDate.toISOString())}, your local time. Durable — survives restarts; cancel anytime before it fires.`
-                    : "Choose a time at least a minute from now."}
-                </p>
-              </div>
-            )}
           </Field>
-
+          {mode === "later" && (
+            <SchedulePicker
+              value={sendAt}
+              onChange={setSendAt}
+              onValidityChange={setScheduleValid}
+            />
+          )}
           {error && (
             <p
               role="alert"
-              className="rounded-xl border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger"
+              className="rounded-lg border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger"
             >
               {error}
             </p>
           )}
         </aside>
       </DialogBody>
-
       <DialogFooter>
         <Button variant="ghost" onClick={onClose} disabled={submitting}>
           Cancel
@@ -245,28 +308,11 @@ function ReviewSendForm({
   );
 }
 
-function isTooSoon(date: Date): boolean {
-  return date.getTime() < Date.now() + 60_000;
-}
-
-function loadLastRecipients(): string[] {
-  try {
-    const last = JSON.parse(localStorage.getItem(LAST_RECIPIENTS_KEY) ?? "[]");
-    return Array.isArray(last)
-      ? last.filter((x): x is string => typeof x === "string")
-      : [];
-  } catch {
-    return [];
-  }
-}
-
 function Field({
   label,
-  hint,
   children,
 }: {
   label: string;
-  hint?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -275,7 +321,6 @@ function Field({
         {label}
       </div>
       {children}
-      {hint && <p className="mt-1.5 text-xs text-gray-500">{hint}</p>}
     </div>
   );
 }

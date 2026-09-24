@@ -12,6 +12,7 @@ type Props = {
   onChange: (next: string[]) => void;
   disabled?: boolean;
   autoFocus?: boolean;
+  showHelp?: boolean;
 };
 
 /** Chip input for addresses. Enter, comma, space, blur, or pasting a list all commit. */
@@ -20,6 +21,7 @@ export function RecipientsInput({
   onChange,
   disabled,
   autoFocus,
+  showHelp = true,
 }: Props) {
   const [draft, setDraft] = useState("");
   const [invalid, setInvalid] = useState<string | null>(null);
@@ -114,7 +116,7 @@ export function RecipientsInput({
           spellCheck={false}
         />
       </label>
-      <p
+      {(showHelp || invalid) && <p
         className={cn(
           "mt-1.5 text-xs",
           invalid ? "text-danger" : "text-gray-500",
@@ -122,8 +124,9 @@ export function RecipientsInput({
       >
         {invalid
           ? `“${invalid}” isn't a valid email address`
-          : "Press Enter or comma to add. Paste a list to add many."}
+          : "Press Enter or comma to add."}
       </p>
+      }
     </div>
   );
 }

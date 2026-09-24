@@ -1,21 +1,32 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { applyTheme, readTheme, type Theme } from "./theme";
+import { useEffect, useState } from "react";
+import {
+  applyTheme,
+  readThemePreference,
+  resolvedTheme,
+  type ThemePreference,
+} from "./theme";
 
 /** Client-only: the editor is never server-rendered, so reading the DOM in the initializer is safe. */
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() =>
-    typeof window === "undefined" ? "light" : readTheme(),
+  const [preference, setPreference] = useState<ThemePreference>(() =>
+    typeof window === "undefined" ? "system" : readThemePreference(),
+  );
+  const [theme, setTheme] = useState(() =>
+    typeof window === "undefined" ? "light" : resolvedTheme(preference),
   );
 
-  const toggle = useCallback(() => {
-    setTheme((current) => {
-      const next = current === "dark" ? "light" : "dark";
-      applyTheme(next);
-      return next;
-    });
-  }, []);
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const sync = () => {
+      applyTheme(preference);
+      setTheme(resolvedTheme(preference));
+    };
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, [preference]);
 
-  return { theme, toggle };
+  return { theme, preference, setPreference };
 }

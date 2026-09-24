@@ -32,25 +32,67 @@ export function Dialog({
   const reduceMotion = useReducedMotion();
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
+    if (!panelRef.current) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
+      } else if (e.key === "Tab" && panelRef.current) {
+        const focusable = [
+          ...panelRef.current.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]',
+          ),
+        ].filter((node) => node.getClientRects().length > 0);
+        if (!focusable.length) {
+          e.preventDefault();
+          panelRef.current.focus();
+          return;
+        }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (
+          e.shiftKey &&
+          (document.activeElement === first ||
+            document.activeElement === panelRef.current)
+        ) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
     document.addEventListener("keydown", onKey);
+    const siblings = [...document.body.children].filter(
+      (node) => !node.contains(panelRef.current),
+    );
+    const inertBefore = siblings.map((node) => (node as HTMLElement).inert);
+    siblings.forEach((node) => {
+      (node as HTMLElement).inert = true;
+    });
+    const previousBodyOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    panelRef.current?.focus();
+    panelRef.current.focus();
+
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      siblings.forEach((node, index) => {
+        (node as HTMLElement).inert = inertBefore[index];
+      });
+      document.body.style.overflow = previousBodyOverflow;
       previouslyFocused?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   return createPortal(
     <AnimatePresence>
@@ -61,7 +103,9 @@ export function Dialog({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: reduceMotion ? 0 : 0.15 }}
-          onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) onCloseRef.current();
+          }}
         >
           <motion.div
             ref={panelRef}
@@ -78,9 +122,9 @@ export function Dialog({
             exit={
               reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }
             }
-            transition={{ type: "spring", duration: 0.35, bounce: 0.1 }}
+            transition={{ type: "spring", duration: 0.3, bounce: 0 }}
           >
-            <header className="flex items-start gap-4 border-b border-divide px-6 py-5 dark:border-neutral-800">
+            <header className="flex items-start gap-4 px-6 py-5">
               <div className="min-w-0 flex-1">
                 {eyebrow && (
                   <p className="mb-1 font-mono text-[11px] font-medium tracking-wider text-brand uppercase">
@@ -89,7 +133,7 @@ export function Dialog({
                 )}
                 <h2
                   id={titleId}
-                  className="font-heading text-xl tracking-tight text-charcoal-900 dark:text-neutral-50"
+                  className="font-heading text-2xl tracking-[0.015em] text-charcoal-900 dark:text-neutral-50"
                 >
                   {title}
                 </h2>
@@ -99,7 +143,7 @@ export function Dialog({
                   </p>
                 )}
               </div>
-              <IconButton label="Close" onClick={onClose}>
+              <IconButton label="Close" tooltip={false} onClick={onClose}>
                 <X className="size-4" />
               </IconButton>
             </header>
@@ -127,9 +171,17 @@ export function DialogBody({
   );
 }
 
-export function DialogFooter({ children }: { children: ReactNode }) {
+export function DialogFooter({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <footer className="flex items-center justify-end gap-2 border-t border-divide px-6 py-4 dark:border-neutral-800">
+    <footer
+      className={cn("flex items-center justify-end gap-2 px-6 py-4", className)}
+    >
       {children}
     </footer>
   );

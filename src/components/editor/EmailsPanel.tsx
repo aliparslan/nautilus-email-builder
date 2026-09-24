@@ -217,13 +217,13 @@ export function EmailsPanel({
                   </p>
                   <RecipientDetails addresses={item.to} />
                   {item.data && (
-                    <div className="mt-2 flex items-center gap-1">
+                    <div className="mt-2 flex flex-wrap items-center gap-x-1 gap-y-1">
                       {canEdit && (
                         <button
                           type="button"
                           disabled={busy === item.id}
                           onClick={() => void cancel(item, true)}
-                          className="flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-brand-dark hover:bg-brand/10 disabled:opacity-50 dark:text-brand"
+                          className="flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-2 text-[11px] font-medium text-brand-dark hover:bg-brand/10 disabled:opacity-50 dark:text-brand"
                         >
                           <Pencil className="size-3" />
                           Edit
@@ -232,7 +232,7 @@ export function EmailsPanel({
                       <button
                         type="button"
                         onClick={() => setPreview(item)}
-                        className="flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-brand-dark hover:bg-brand/10 dark:text-brand"
+                        className="flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-2 text-[11px] font-medium text-brand-dark hover:bg-brand/10 dark:text-brand"
                       >
                         <Eye className="size-3" />
                         Preview
@@ -240,7 +240,7 @@ export function EmailsPanel({
                       <button
                         type="button"
                         onClick={() => onLoad(item.data!, item.to, true)}
-                        className="flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-brand-dark hover:bg-brand/10 dark:text-brand"
+                        className="flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-2 text-[11px] font-medium text-brand-dark hover:bg-brand/10 dark:text-brand"
                       >
                         <Copy className="size-3" />
                         Duplicate
@@ -250,7 +250,7 @@ export function EmailsPanel({
                           type="button"
                           disabled={busy === item.id}
                           onClick={() => void cancel(item)}
-                          className="ml-auto flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-danger hover:bg-danger/10 disabled:opacity-50"
+                          className="ml-auto flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-2 text-[11px] font-medium text-danger hover:bg-danger/10 disabled:opacity-50"
                         >
                           <CalendarClock className="size-3" />
                           Cancel

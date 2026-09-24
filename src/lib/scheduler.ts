@@ -5,7 +5,6 @@ import type {
   ScheduledEmailInput,
   ScheduledEmailMemo,
 } from "@/temporal/shared";
-import { scheduledEmail } from "@/temporal/workflows";
 
 export type ScheduledEmailStatus =
   "scheduled" | "sending" | "sent" | "cancelled" | "failed";
@@ -42,7 +41,9 @@ export async function scheduleEmail(
     to: input.to,
     sendAt: input.sendAt,
   };
-  const handle = await client.workflow.start(scheduledEmail, {
+  // Never pass a function here: Next's production bundler minifies its .name
+  // (e.g. to "s"), which is not the name exported by the Temporal worker.
+  const handle = await client.workflow.start("scheduledEmail", {
     taskQueue: env.temporalTaskQueue,
     workflowId: `email-${crypto.randomUUID()}`,
     args: [input],
@@ -74,7 +75,8 @@ export async function listScheduledEmails(): Promise<ScheduledEmail[]> {
 
   try {
     for await (const info of client.workflow.list({
-      query: `WorkflowType = 'scheduledEmail'`,
+      // Include workflows created by the earlier minified production client.
+      query: `WorkflowType = 'scheduledEmail' OR WorkflowType = 's'`,
       pageSize: 100,
     })) {
       const memo = (info.memo ?? {}) as Partial<ScheduledEmailMemo>;
@@ -102,6 +104,7 @@ function toStatus(name: string, sendAt: string): ScheduledEmailStatus {
     case "COMPLETED":
       return "sent";
     case "CANCELLED":
+    case "TERMINATED":
       return "cancelled";
     default:
       return "failed";

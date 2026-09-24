@@ -1,6 +1,45 @@
-# Permanent Temporal hosting
+# Temporal hosting
 
-**Recommended:** Keep the Next.js app on Vercel, use [Temporal Cloud](https://docs.temporal.io/cloud/get-started) for durable workflows, and run this repo's worker as a separate, always-on Fly.io app. You do not need a VPS or a hostname under `alip.dev` for this arrangement. The web app and worker both make outbound TLS connections to Temporal Cloud. The worker also calls Resend when a scheduled email becomes due.
+## Fly.io-only demo (no Temporal Cloud)
+
+For a short-lived demo, use the included [`Dockerfile.demo`](../Dockerfile.demo) and [`fly.demo.toml`](../fly.demo.toml) to put the **Next app, Temporal development server, and worker on one Fly Machine**. Temporal's unauthenticated gRPC port binds only to localhost, and its SQLite file lives on a Fly Volume. Only the Next app's HTTPS port is public. This avoids managing a public gRPC endpoint from Vercel, but you must demo from the Fly URL, **not the existing Vercel URL**. The two origins have separate browser `localStorage` drafts and recipients. This is not a production architecture: no HA, single-machine/local-disk persistence, and Temporal's development server is explicitly not intended for production. The Machine and volume incur Fly charges while running.
+
+From the repository root, log in to Fly and choose a unique app name (replace the example with your own):
+
+```bash
+fly auth login
+FLY_DEMO_APP=nautilus-email-demo-yourname
+fly apps create "$FLY_DEMO_APP"
+fly volumes create temporal_data --size 1 --region ord -a "$FLY_DEMO_APP" -y
+```
+
+`ord` matches `primary_region` in `fly.demo.toml`. Change both if you prefer another region. Create an ignored `.env.fly-demo.local` file (the existing `.gitignore` ignores `.env*` files) with your **real** Resend values:
+
+```text
+RESEND_API_KEY=re_...
+RESEND_FROM_EMAIL=hello@your-verified-domain.example
+RESEND_FROM_NAME=Mister Car Wash
+```
+
+If you have not verified a sending domain yet, use `onboarding@resend.dev` and only send to an address allowed by your Resend account. Then deploy one Machine with Fly autostop disabled:
+
+```bash
+fly secrets import -a "$FLY_DEMO_APP" --stage < .env.fly-demo.local
+fly deploy -a "$FLY_DEMO_APP" -c fly.demo.toml --ha=false
+fly status -a "$FLY_DEMO_APP"
+fly logs -a "$FLY_DEMO_APP"
+fly ips list -a "$FLY_DEMO_APP"
+```
+
+If `fly ips list` shows no public IPs after deploying, allocate a shared IPv4 and IPv6 with `fly ips allocate-v4 --shared -a "$FLY_DEMO_APP"` and `fly ips allocate-v6 -a "$FLY_DEMO_APP"`. Visit `https://$FLY_DEMO_APP.fly.dev`. The log should show `Temporal worker listening on "nautilus-email" @ 127.0.0.1:7233`; `fly status` should show one running healthy Machine. Do **not** put `TEMPORAL_API_KEY` in Fly secrets for this setup: the server is local and not configured for Cloud TLS/API-key auth. The address and namespace are set by `fly.demo.toml`.
+
+Send to your own address, then schedule a test message for a few minutes later. Check activity in the app and your inbox. To confirm timers survive a restart, schedule another test message for ~10 minutes later, restart the Machine with `fly machine restart <machine-id> -a "$FLY_DEMO_APP"` (find its ID in `fly status`), and wait for delivery. State is on the mounted volume; the worker reconnects when the Machine restarts. After code changes, redeploy with the same `fly deploy -a "$FLY_DEMO_APP" -c fly.demo.toml --ha=false` command. Never scale this SQLite-based demo above one Machine.
+
+**Security:** The builder has no login and a public `/api/email/send`. Use test recipients and a limited/short-lived Resend key; do not put real customer lists or a valuable production key behind a public demo URL. Remove the key or destroy the demo app after presenting. Since this demo stays on Fly, your Vercel app still cannot schedule using its private Temporal server; leave Vercel's Temporal variables unset or use Temporal Cloud for that deployment.
+
+## Permanent scheduling (Vercel + Temporal Cloud + Fly worker)
+
+**Recommended for production:** Keep the Next.js app on Vercel, use [Temporal Cloud](https://docs.temporal.io/cloud/get-started) for durable workflows, and run this repo's worker as a separate, always-on Fly.io app. You do not need a VPS or a hostname under `alip.dev` for this arrangement. The web app and worker both make outbound TLS connections to Temporal Cloud. The worker also calls Resend when a scheduled email becomes due.
 
 **Do you have to use Temporal Cloud? No.** `bun run worker` on a Fly Machine works exactly as it does locally, but the worker only *polls and executes* tasks. A separate Temporal **service** stores workflow state and durable timers. In local development, `temporal server start-dev` supplies that service; running only the worker on Fly while leaving the dev server on your laptop would stop scheduling when your laptop is off. Fly can also host a self-managed Temporal service, but then you need a persistent database, backups, upgrades, and a secure TLS/authenticated gRPC endpoint that your Vercel app can reach. Do **not** deploy `temporal server start-dev` as the production service. Temporal Cloud + one Fly worker is the simplest reliable choice here; self-hosting trades the Cloud bill for operational work. Cloudflare is fine for DNS, but a standard Cloudflare Worker is not a drop-in long-running Node Temporal worker or Temporal service.
 

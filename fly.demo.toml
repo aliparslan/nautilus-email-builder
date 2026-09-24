@@ -1,0 +1,31 @@
+# Demo-only single-Machine setup. The Vercel deployment cannot reach this
+# private Temporal server; use this Fly app's URL for scheduling demos.
+primary_region = "ord"
+
+[build]
+dockerfile = "Dockerfile.demo"
+
+[env]
+TEMPORAL_ADDRESS = "127.0.0.1:7233"
+TEMPORAL_NAMESPACE = "default"
+
+[http_service]
+internal_port = 3000
+force_https = true
+auto_stop_machines = "off"
+min_machines_running = 1
+
+[[http_service.checks]]
+interval = "30s"
+timeout = "5s"
+grace_period = "90s"
+method = "GET"
+path = "/"
+
+[[mounts]]
+source = "temporal_data"
+destination = "/data"
+
+[[vm]]
+size = "shared-cpu-2x"
+memory = "2gb"

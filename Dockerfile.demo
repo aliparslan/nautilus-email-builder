@@ -1,0 +1,24 @@
+# Demo only: one Fly Machine hosts the Next app, Temporal's development server,
+# and the Temporal worker. Temporal gRPC is bound to localhost, not the internet.
+FROM node:22-bookworm-slim AS build
+COPY --from=oven/bun:1.3.11 /usr/local/bin/bun /usr/local/bin/bun
+WORKDIR /app
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
+COPY next.config.ts postcss.config.mjs tsconfig.json ./
+COPY public ./public
+COPY src ./src
+RUN bun run build
+
+FROM node:22-bookworm-slim
+COPY --from=oven/bun:1.3.11 /usr/local/bin/bun /usr/local/bin/bun
+ARG TEMPORAL_CLI_VERSION=1.9.1
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
+    && curl -fsSL "https://github.com/temporalio/cli/releases/download/v${TEMPORAL_CLI_VERSION}/temporal_cli_${TEMPORAL_CLI_VERSION}_linux_amd64.tar.gz" \
+      | tar -xz -C /usr/local/bin temporal \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY --from=build /app /app
+COPY scripts/start-fly-demo.sh ./scripts/start-fly-demo.sh
+EXPOSE 3000
+CMD ["/bin/bash", "/app/scripts/start-fly-demo.sh"]

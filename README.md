@@ -84,7 +84,7 @@ vercel link
 vercel deploy --prod
 ```
 
-Configure the Resend variables in Vercel before testing delivery. For permanent scheduling, use Temporal Cloud and the dedicated Fly.io worker config included here. Follow the [step-by-step hosting guide](./docs/temporal-hosting.md) to set matching Temporal credentials on Vercel and Fly.io, deploy the worker, and test a scheduled send. The API key enables TLS automatically; local development remains unchanged.
+For a short-lived demo without Temporal Cloud, deploy the web app, Temporal dev server, and worker together on one Fly Machine with the included `Dockerfile.demo` and `fly.demo.toml`. Use its Fly URL rather than the Vercel URL for scheduling. For permanent scheduling with the app on Vercel, use Temporal Cloud and the dedicated Fly worker instead. Both options are documented in the [step-by-step hosting guide](./docs/temporal-hosting.md).
 
 ## Time spent
 

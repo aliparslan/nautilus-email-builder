@@ -1,0 +1,11 @@
+primary_region = "ord"
+
+[build]
+dockerfile = "Dockerfile.worker"
+
+[processes]
+app = "bun run worker"
+
+[[vm]]
+size = "shared-cpu-1x"
+memory = "1gb"
